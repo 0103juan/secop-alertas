@@ -160,6 +160,9 @@ uv run ruff check . && uv run ruff format --check .
 CI runs the same against a Postgres service, checks that migrations match the models, builds the image and
 validates the Terraform.
 
+The same pipeline exists for **Jenkins** (`Jenkinsfile`), with a gated deploy to Cloud Run, and `ci/jenkins` starts
+a controller configured as code to run it: see [ci/jenkins/README.md](ci/jenkins/README.md).
+
 ## Deploy
 
 `deploy/gcp` joins an existing project and Cloud SQL instance, creating a database and user of its own.

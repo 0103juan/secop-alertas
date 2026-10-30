@@ -1,0 +1,27 @@
+# Jenkins configuration as code: the admin user and the pipeline job, nothing clicked by hand.
+jenkins:
+  systemMessage: "secop-alertas CI, local controller"
+  numExecutors: 2 # builds run on the controller here; a real installation runs them on agents
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy: loggedInUsersCanDoAnything
+jobs:
+  - script: |
+      pipelineJob('secop-alertas') {
+        description('Tests, image and gated Cloud Run deploy, from the repository Jenkinsfile')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('https://github.com/0103juan/secop-alertas.git') }
+                branch('${JENKINS_BRANCH:-main}')
+              }
+            }
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }

@@ -333,6 +333,12 @@ resource "google_cloud_run_v2_service" "web" {
     }
   }
 
+  # Terraform creates the service with var.image; after that, the CI pipeline (Jenkinsfile) rolls out new images.
+  # Without this, every terraform apply would roll the service back to whatever image the tfvars name.
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image, client, client_version]
+  }
+
   depends_on = [google_project_iam_member.sql_client, google_secret_manager_secret_iam_member.read, google_secret_manager_secret_version.this]
 }
 
@@ -398,6 +404,10 @@ resource "google_cloud_run_v2_job" "ingest" {
         }
       }
     }
+  }
+
+  lifecycle {
+    ignore_changes = [template[0].template[0].containers[0].image, client, client_version]
   }
 
   depends_on = [google_project_iam_member.sql_client, google_secret_manager_secret_iam_member.read, google_secret_manager_secret_version.this]
