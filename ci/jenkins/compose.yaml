@@ -1,0 +1,17 @@
+# docker compose -f ci/jenkins/compose.yaml up -d --build   then open http://localhost:8090 (admin / JENKINS_ADMIN_PASSWORD)
+services:
+  jenkins:
+    build: .
+    ports: ["8090:8080"]
+    environment:
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:?set JENKINS_ADMIN_PASSWORD}
+      JENKINS_BRANCH: ${JENKINS_BRANCH:-main}
+    # The pipeline starts containers (Postgres, uv, the Cloud SDK) through the host's Docker. Root inside the
+    # controller is what lets it use the socket on Docker Desktop; on a Linux host, add the jenkins user to the
+    # socket's group instead.
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins_home:/var/jenkins_home
+volumes:
+  jenkins_home:
