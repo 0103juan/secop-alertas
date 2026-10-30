@@ -14,7 +14,7 @@ values). Those needs come with constraints, and the constraints drove the design
 | The source is a public portal (datos.gov.co) that times out and publishes once a day | Ingestion is a batch job with retries and a resumable cursor, separate from the web service |
 | Pub/Sub, like every managed queue, delivers **at least once** | Every consumer must be idempotent; duplicates are handled by the database, not by hoping |
 | A lost alert is worse than a late one | Events are written in the same transaction as the data (outbox); deliveries are retried with backoff |
-| The demo runs on free-trial credits | Scale to zero, share an existing Cloud SQL instance, Redis as a sidecar instead of Memorystore |
+| The demo runs on free-trial credits | One warm instance billed at the idle rate (no cold start for a visitor), share an existing Cloud SQL instance, Redis as a sidecar instead of Memorystore |
 | The readings touch tens of thousands of rows per request | Vectorised algorithms in NumPy, results cached; anything bigger belongs in a batch job |
 
 ## 2. How the design was reached
