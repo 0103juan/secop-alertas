@@ -91,3 +91,9 @@ def test_contracts_search_filters_and_hides_the_supplier_document(api, contract)
     body = api.get("/api/v1/contracts/", {"q": "puentes", "min_value": 100_000_000}).json()
     assert [c["object"] for c in body["results"]] == ["Construcción del puente sobre el río Cauca"]
     assert "supplier_doc" not in body["results"][0] and "next" in body
+
+
+def test_a_contract_is_found_by_its_secop_id_which_has_dots(api, contract):
+    found = make_contract(id="CO1.PCCNTR.9025726")
+    body = api.get(f"/api/v1/contracts/{found.id}/").json()
+    assert body["id"] == "CO1.PCCNTR.9025726" and "supplier_doc" not in body

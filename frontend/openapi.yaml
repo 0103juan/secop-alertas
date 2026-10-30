@@ -1,0 +1,1243 @@
+openapi: 3.0.3
+info:
+  title: SECOP alertas
+  version: 0.1.0
+  description: Alerts and readings over Colombia's SECOP II public contracts.
+paths:
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/alerts/:
+    get:
+      operationId: v1_alerts_list
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: El valor del cursor de paginación.
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - in: query
+        name: subscription
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlertList'
+          description: ''
+  /api/v1/analytics/outliers/:
+    get:
+      operationId: v1_analytics_outliers_retrieve
+      parameters:
+      - in: query
+        name: department
+        schema:
+          type: string
+          minLength: 1
+        required: true
+      - in: query
+        name: entity_nit
+        schema:
+          type: integer
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          maximum: 500
+          minimum: 1
+          default: 50
+      - in: query
+        name: min_group
+        schema:
+          type: integer
+          minimum: 10
+          default: 30
+      - in: query
+        name: signed_after
+        schema:
+          type: string
+          format: date
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutliersResponse'
+          description: ''
+  /api/v1/analytics/splitting/:
+    get:
+      operationId: v1_analytics_splitting_retrieve
+      parameters:
+      - in: query
+        name: department
+        schema:
+          type: string
+          minLength: 1
+        required: true
+      - in: query
+        name: entity_nit
+        schema:
+          type: integer
+      - in: query
+        name: min_contracts
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 2
+          default: 2
+      - in: query
+        name: signed_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: threshold_cop
+        schema:
+          type: integer
+          minimum: 1000000
+          default: 50000000
+      - in: query
+        name: window_days
+        schema:
+          type: integer
+          maximum: 365
+          minimum: 1
+          default: 30
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SplittingResponse'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: v1_auth_login_create
+      description: 'POST username and password: the access token in the body, the
+        refresh token in the cookie.'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Access'
+          description: ''
+  /api/v1/auth/logout/:
+    post:
+      operationId: v1_auth_logout_create
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/me/:
+    get:
+      operationId: v1_auth_me_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+  /api/v1/auth/refresh/:
+    post:
+      operationId: v1_auth_refresh_create
+      description: |-
+        POST with the cookie: a new access token. 204 without a cookie (no session is not an error: every anonymous
+        page load asks), 401 when the cookie is expired or forged.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Access'
+          description: ''
+        '204':
+          description: No response body
+  /api/v1/auth/register/:
+    post:
+      operationId: v1_auth_register_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: ''
+  /api/v1/auth/token/:
+    post:
+      operationId: v1_auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: v1_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/contracts/:
+    get:
+      operationId: v1_contracts_list
+      description: |-
+        Public and read-only. Cursor pagination keeps deep pages as cheap as the first one: it seeks on the
+        (signed_on, id) index instead of scanning and discarding OFFSET rows.
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: El valor del cursor de paginación.
+        schema:
+          type: string
+      - in: query
+        name: department
+        schema:
+          type: string
+      - in: query
+        name: entity_nit
+        schema:
+          type: integer
+      - in: query
+        name: max_value
+        schema:
+          type: integer
+      - in: query
+        name: min_value
+        schema:
+          type: integer
+      - in: query
+        name: modality
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Full-text search over the object (Spanish)
+      - in: query
+        name: signed_after
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: signed_before
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedContractList'
+          description: ''
+  /api/v1/contracts/{id}/:
+    get:
+      operationId: v1_contracts_retrieve
+      description: |-
+        Public and read-only. Cursor pagination keeps deep pages as cheap as the first one: it seeks on the
+        (signed_on, id) index instead of scanning and discarding OFFSET rows.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[^/]+$
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+          description: ''
+  /api/v1/subscriptions/:
+    get:
+      operationId: v1_subscriptions_list
+      description: |-
+        A user's own subscriptions. The queryset is filtered by owner, so another user's id answers 404, not 403:
+        the API does not reveal which ids exist.
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: El valor del cursor de paginación.
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSubscriptionList'
+          description: ''
+    post:
+      operationId: v1_subscriptions_create
+      description: |-
+        A user's own subscriptions. The queryset is filtered by owner, so another user's id answers 404, not 403:
+        the API does not reveal which ids exist.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Subscription'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Subscription'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Subscription'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+          description: ''
+  /api/v1/subscriptions/{id}/:
+    get:
+      operationId: v1_subscriptions_retrieve
+      description: |-
+        A user's own subscriptions. The queryset is filtered by owner, so another user's id answers 404, not 403:
+        the API does not reveal which ids exist.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este subscription.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+          description: ''
+    put:
+      operationId: v1_subscriptions_update
+      description: |-
+        A user's own subscriptions. The queryset is filtered by owner, so another user's id answers 404, not 403:
+        the API does not reveal which ids exist.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este subscription.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Subscription'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Subscription'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Subscription'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+          description: ''
+    patch:
+      operationId: v1_subscriptions_partial_update
+      description: |-
+        A user's own subscriptions. The queryset is filtered by owner, so another user's id answers 404, not 403:
+        the API does not reveal which ids exist.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este subscription.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSubscription'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSubscription'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSubscription'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+          description: ''
+    delete:
+      operationId: v1_subscriptions_destroy
+      description: |-
+        A user's own subscriptions. The queryset is filtered by owner, so another user's id answers 404, not 403:
+        the API does not reveal which ids exist.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este subscription.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/subscriptions/{id}/preview/:
+    get:
+      operationId: v1_subscriptions_preview_list
+      description: The most recent contracts these rules would have matched, computed
+        in the database.
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: El valor del cursor de paginación.
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este subscription.
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedContractList'
+          description: ''
+  /api/v1/subscriptions/{id}/secret/:
+    get:
+      operationId: v1_subscriptions_secret_retrieve
+      description: The key that signs this subscription's webhooks, shown only to
+        its owner.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este subscription.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionSecret'
+          description: ''
+components:
+  schemas:
+    Access:
+      type: object
+      properties:
+        access:
+          type: string
+      required:
+      - access
+    Alert:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subscription:
+          type: integer
+        contract:
+          $ref: '#/components/schemas/Contract'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        delivered_at:
+          type: string
+          format: date-time
+          nullable: true
+        attempts:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - contract
+      - created_at
+      - id
+      - subscription
+    ChannelEnum:
+      enum:
+      - email
+      - webhook
+      type: string
+      description: |-
+        * `email` - Email
+        * `webhook` - Webhook
+    Cluster:
+      type: object
+      properties:
+        entity_nit:
+          type: integer
+        entity:
+          type: string
+        supplier:
+          type: string
+        contract_ids:
+          type: array
+          items:
+            type: string
+        contracts:
+          type: integer
+        first_signed:
+          type: string
+          format: date-time
+        last_signed:
+          type: string
+          format: date-time
+        total_cop:
+          type: integer
+        largest_cop:
+          type: integer
+      required:
+      - contract_ids
+      - contracts
+      - entity
+      - entity_nit
+      - first_signed
+      - largest_cop
+      - last_signed
+      - supplier
+      - total_cop
+    Contract:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 40
+        entity:
+          type: string
+          maxLength: 300
+        entity_nit:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        department:
+          type: string
+          maxLength: 80
+        city:
+          type: string
+          maxLength: 120
+        contract_type:
+          type: string
+          maxLength: 120
+        modality:
+          type: string
+          maxLength: 120
+        status:
+          type: string
+          maxLength: 60
+        object:
+          type: string
+        supplier:
+          type: string
+          maxLength: 300
+        signed_on:
+          type: string
+          format: date-time
+          nullable: true
+        value_cop:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        upstream_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+      required:
+      - department
+      - entity
+      - id
+      - object
+    Me:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+      - email
+      - username
+    Outlier:
+      type: object
+      properties:
+        id:
+          type: string
+        entity:
+          type: string
+        object:
+          type: string
+        modality:
+          type: string
+        contract_type:
+          type: string
+        value_cop:
+          type: integer
+        url:
+          type: string
+        group_size:
+          type: integer
+        z:
+          type: number
+          format: double
+          description: Modified z-score on log10(value); |z| > 3.5 is flagged
+        group_median_cop:
+          type: integer
+      required:
+      - contract_type
+      - entity
+      - group_median_cop
+      - group_size
+      - id
+      - modality
+      - object
+      - url
+      - value_cop
+      - z
+    OutlierParams:
+      type: object
+      description: |-
+        Which contracts a reading runs over. Department is required: a reading over the whole country is a batch
+        job, not a request.
+      properties:
+        department:
+          type: string
+        signed_after:
+          type: string
+          format: date
+        entity_nit:
+          type: integer
+        min_group:
+          type: integer
+          minimum: 10
+          default: 30
+        limit:
+          type: integer
+          maximum: 500
+          minimum: 1
+          default: 50
+      required:
+      - department
+    OutliersResponse:
+      type: object
+      properties:
+        params:
+          $ref: '#/components/schemas/OutlierParams'
+        truncated:
+          type: boolean
+        outliers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Outlier'
+      required:
+      - outliers
+      - params
+      - truncated
+    PaginatedAlertList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+    PaginatedContractList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contract'
+    PaginatedSubscriptionList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subscription'
+    PatchedSubscription:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        rules:
+          description: 'A list of {"type": ..., "params": {...}}; all of them must
+            match.'
+        channel:
+          $ref: '#/components/schemas/ChannelEnum'
+        target:
+          type: string
+          description: An email address or an https URL, by channel.
+          maxLength: 500
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    Register:
+      type: object
+      properties:
+        username:
+          type: string
+          title: Nombre de usuario
+          description: 'Requerido. 150 carácteres como máximo. Únicamente letras,
+            dígitos y @/./+/-/_ '
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          title: Dirección de correo electrónico
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+      - username
+    SplittingParams:
+      type: object
+      description: |-
+        Which contracts a reading runs over. Department is required: a reading over the whole country is a batch
+        job, not a request.
+      properties:
+        department:
+          type: string
+        signed_after:
+          type: string
+          format: date
+        entity_nit:
+          type: integer
+        threshold_cop:
+          type: integer
+          minimum: 1000000
+          default: 50000000
+        window_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+          default: 30
+        min_contracts:
+          type: integer
+          maximum: 50
+          minimum: 2
+          default: 2
+      required:
+      - department
+    SplittingResponse:
+      type: object
+      properties:
+        params:
+          $ref: '#/components/schemas/SplittingParams'
+        truncated:
+          type: boolean
+          description: True when MAX_ROWS cut the input short
+        total:
+          type: integer
+          description: Clusters found; at most 200 are returned
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cluster'
+      required:
+      - clusters
+      - params
+      - total
+      - truncated
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        rules:
+          description: 'A list of {"type": ..., "params": {...}}; all of them must
+            match.'
+        channel:
+          $ref: '#/components/schemas/ChannelEnum'
+        target:
+          type: string
+          description: An email address or an https URL, by channel.
+          maxLength: 500
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - rules
+      - target
+      - updated_at
+    SubscriptionSecret:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        secret:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - secret
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

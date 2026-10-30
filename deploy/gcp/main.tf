@@ -252,7 +252,7 @@ resource "google_cloud_run_v2_service" "web" {
     service_account = google_service_account.web.email
 
     scaling {
-      min_instance_count = 0 # nothing runs, and nothing is billed, while nobody calls
+      min_instance_count = 1 # one warm instance: no cold start; with cpu_idle it is billed at the idle rate
       max_instance_count = 3
     }
 

@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 from .data import cached, load_frame
 from .outliers import find_outliers
-from .serializers import OutlierParams, SplittingParams
+from .serializers import OutlierParams, OutliersResponseSerializer, SplittingParams, SplittingResponseSerializer
 from .splitting import COLUMNS, find_clusters
 
 MAX_CLUSTERS = 200
@@ -20,7 +20,7 @@ OUTLIER_COLUMNS = ["id", "entity", "object", "modality", "contract_type", "value
 class SplittingView(APIView):
     permission_classes = [AllowAny]
 
-    @extend_schema(parameters=[SplittingParams])
+    @extend_schema(parameters=[SplittingParams], responses=SplittingResponseSerializer)
     def get(self, request):
         params = SplittingParams(data=request.query_params)
         params.is_valid(raise_exception=True)
@@ -45,7 +45,7 @@ class SplittingView(APIView):
 class OutliersView(APIView):
     permission_classes = [AllowAny]
 
-    @extend_schema(parameters=[OutlierParams])
+    @extend_schema(parameters=[OutlierParams], responses=OutliersResponseSerializer)
     def get(self, request):
         params = OutlierParams(data=request.query_params)
         params.is_valid(raise_exception=True)

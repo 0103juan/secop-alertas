@@ -4,6 +4,7 @@ Only DATABASE_URL and, outside DEBUG, SECRET_KEY are required. Everything else h
 """
 
 import os
+import re
 from datetime import timedelta
 from pathlib import Path
 
@@ -107,6 +108,18 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# The Angular client's build (frontend/), served at the site root; see config/spa.py.
+FRONTEND_BUILD = BASE_DIR / "frontend" / "dist" / "frontend" / "browser"
+WHITENOISE_ROOT = FRONTEND_BUILD if FRONTEND_BUILD.is_dir() else None
+
+
+def _hashed_by_angular(path: str, url: str) -> bool:
+    """Angular names its bundles main-ABCD1234.js; those never change, so they may be cached for a year."""
+    return bool(re.search(r"-[A-Za-z0-9_-]{8}\.(js|css|woff2?)$", url))
+
+
+WHITENOISE_IMMUTABLE_FILE_TEST = _hashed_by_angular
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
@@ -128,7 +141,12 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {"anon": os.environ.get("ANON_RATE", "60/min"), "user": "600/min", "register": "10/hour"},
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("ANON_RATE", "60/min"),
+        "user": "600/min",
+        "register": "10/hour",
+        "login": "20/min",
+    },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 

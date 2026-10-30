@@ -14,7 +14,7 @@ values). Those needs come with constraints, and the constraints drove the design
 | The source is a public portal (datos.gov.co) that times out and publishes once a day | Ingestion is a batch job with retries and a resumable cursor, separate from the web service |
 | Pub/Sub, like every managed queue, delivers **at least once** | Every consumer must be idempotent; duplicates are handled by the database, not by hoping |
 | A lost alert is worse than a late one | Events are written in the same transaction as the data (outbox); deliveries are retried with backoff |
-| The demo runs on free-trial credits | Scale to zero, share an existing Cloud SQL instance, Redis as a sidecar instead of Memorystore |
+| The demo runs on free-trial credits | One warm instance billed at the idle rate (no cold start for a visitor), share an existing Cloud SQL instance, Redis as a sidecar instead of Memorystore |
 | The readings touch tens of thousands of rows per request | Vectorised algorithms in NumPy, results cached; anything bigger belongs in a batch job |
 
 ## 2. How the design was reached
@@ -212,3 +212,28 @@ in Python took 0.97 s over the 36,254 contracts; the vectorised one takes 0.11 s
 - **Failure injection**: Pub/Sub down during ingestion, a 503 from the source, webhooks answering 500, an expired
   lease, a forged or misaddressed OIDC token.
 - CI also checks that migrations match the models, builds the image and validates the Terraform.
+
+## 11. The web client (Angular 22)
+
+`frontend/` is the browser client: search, the two readings, sign-up and the alert editor. It is built into the
+image and served by Django from the same origin as the API (`config/spa.py`, WhiteNoise for the files).
+
+| Decision | Why |
+|---|---|
+| Same origin as the API | No CORS, and the refresh cookie can be `SameSite=Strict`, which is the CSRF defence |
+| Access token in memory, refresh token in an `HttpOnly` cookie | A script injected into the page cannot read either: the access token is not in `localStorage`, and JavaScript cannot see the cookie. A reload restores the session from the cookie (`Session.restore` at start-up) |
+| One interceptor refreshes on 401, single-flight | Several calls that expire together share one refresh (`shareReplay`) instead of racing; a failed refresh ends the session and sends the user to sign in with `?next=` (checked against open redirects) |
+| Types generated from the OpenAPI document | `openapi.yaml` is generated from the serializers and `schema.d.ts` from it; CI fails if either is stale, so a renamed field breaks the build, not a page |
+| Signals throughout, `httpResource` for reads | Zoneless change detection, OnPush everywhere; a resource refetches when its URL signal changes and cancels the previous request |
+| `CursorList` for DRF cursor pagination | Appends pages and drops answers from a superseded search (a generation counter), so a slow "ví" cannot overwrite "vías" |
+| Filters in the URL | A search can be shared, and the back button undoes a filter; the page writes query params and reads them as inputs |
+| Signal forms, with server errors mapped to fields | Client rules mirror the API's (`rules.problem`), and a 400 from DRF lands under the input it is about (`core/forms.ts`) |
+| Lazy routes, private ones behind `canMatch` | A signed-out visitor never downloads the private chunks; initial bundle 82 kB compressed |
+
+Structure: `core/` (API types and helpers, session, interceptor, guard, pagination, formatting), `features/` (one
+folder per area: contracts, analytics, auth, subscriptions), `shared/` (contract card, field errors, 404).
+
+Tested at two levels: 19 Vitest unit tests for the parts with logic (rule mapping and validation, the interceptor's
+refresh and single-flight, the pagination race, form helpers), and 17 Playwright tests against the real stack
+(Django, Postgres seeded with `manage.py seed_demo`, the built client), including a phone viewport. Run three times
+in a row: 51 of 51 passed.

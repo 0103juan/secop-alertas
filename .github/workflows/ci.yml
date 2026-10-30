@@ -32,8 +32,67 @@ jobs:
         env:
           DEBUG: "1"
       - run: uv run pytest
+      - name: The OpenAPI document in the repository matches the code
+        run: |
+          uv run python manage.py spectacular --file frontend/openapi.yaml --validate --fail-on-warn
+          git diff --exit-code frontend/openapi.yaml
+        env:
+          DEBUG: "1"
       - name: The image builds
         run: docker build -t secop-alertas .
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: The TypeScript types match the OpenAPI document
+        run: npm run api:types && git diff --exit-code src/app/core/api/schema.d.ts
+      - run: npx ng test --watch=false
+      - run: npx ng build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [test, frontend]
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: alertas_e2e
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U postgres" --health-interval 3s --health-retries 20
+    env:
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/alertas_e2e
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv sync --locked
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx ng build && npx playwright install --with-deps chromium
+        working-directory: frontend
+      # Django serves the build and the API over a Postgres seeded with the demo contracts; nothing is mocked.
+      - run: npx playwright test
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
 
   terraform:
     runs-on: ubuntu-latest
