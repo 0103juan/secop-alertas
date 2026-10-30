@@ -296,10 +296,16 @@ resource "google_cloud_run_v2_service" "web" {
       }
       startup_probe {
         http_get {
-          path = "/healthz"
+          path = "/readyz" # starts taking traffic once Postgres answers
         }
         period_seconds    = 5
         failure_threshold = 12
+      }
+      liveness_probe {
+        http_get {
+          path = "/healthz" # the process only; a database outage must not restart every instance
+        }
+        period_seconds = 30
       }
       depends_on = ["redis"]
     }
@@ -351,8 +357,9 @@ resource "google_cloud_run_v2_job" "ingest" {
       max_retries     = 1
       timeout         = "1800s"
       containers {
-        image   = var.image
-        command = ["sh", "-c", "python manage.py migrate --noinput && python manage.py ingest_secop --where \"$INGEST_WHERE\""]
+        image = var.image
+        # migrate, load, then send whatever is due (alerts whose backoff passed since the last push)
+        command = ["sh", "-c", "python manage.py migrate --noinput && python manage.py ingest_secop --where \"$INGEST_WHERE\" && python manage.py deliver_alerts"]
         resources {
           limits = { cpu = "1", memory = "1Gi" }
         }

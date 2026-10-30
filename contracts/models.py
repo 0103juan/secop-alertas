@@ -1,6 +1,10 @@
-from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.contrib.postgres.search import SearchVector
 from django.db import models
+from django.db.models import F
+from django.db.models.functions import Upper
+
+from .expressions import folded
 
 
 class Contract(models.Model):
@@ -26,11 +30,20 @@ class Contract(models.Model):
     url = models.URLField(max_length=500, blank=True)
 
     class Meta:
+        # Each index serves a query the application runs; docs/ARCHITECTURE.md has the plans before and after.
         indexes = [
-            models.Index(fields=["entity_nit", "supplier_doc", "signed_on"], name="contract_entity_supplier_date"),
-            models.Index(fields=["department", "-signed_on"], name="contract_department_date"),
-            models.Index(fields=["modality", "contract_type"], name="contract_modality_type"),
+            # The default listing, newest first, and the cursor pagination's order.
+            models.Index(F("signed_on").desc(), F("id"), name="contract_signed"),
+            # ?department= is case-insensitive, so Django compares UPPER(department); a plain index on the column
+            # cannot serve that, an index on the same expression can (and gives the planner statistics for it).
+            models.Index(Upper("department"), F("signed_on").desc(), name="contract_department_signed"),
+            # ?entity_nit= and the entity alert rule, newest first.
+            models.Index(F("entity_nit"), F("signed_on").desc(), name="contract_entity_signed"),
+            # ?q= full-text search in Spanish; the filter uses this same expression.
             GinIndex(SearchVector("object", config="spanish"), name="contract_object_search"),
+            # Keyword rules match substrings without accents or case ("vias" finds "VÍAS"); a trigram index turns
+            # that LIKE '%...%' from a full scan into an index lookup.
+            GinIndex(OpClass(folded("object"), name="gin_trgm_ops"), name="contract_object_trgm"),
         ]
 
     def __str__(self) -> str:

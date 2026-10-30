@@ -14,7 +14,9 @@ from abc import ABC, abstractmethod
 from typing import ClassVar
 
 from django.db.models import Q
+from django.db.models.lookups import Contains
 
+from contracts.expressions import folded
 from contracts.models import Contract
 
 
@@ -42,6 +44,9 @@ class Rule(ABC):
 
 
 REGISTRY: dict[str, type[Rule]] = {}
+
+
+MIN_WORD = 3
 
 
 def register(cls: type[Rule]) -> type[Rule]:
@@ -73,14 +78,19 @@ class KeywordRule(Rule):
         return any(word in text for word in self._folded)
 
     def as_q(self) -> Q:
+        # The left side is exactly the trigram index's expression (contracts.expressions.folded), so the database
+        # answers from the index instead of reading every contract.
         q = Q()
-        for word in self.words:
-            q |= Q(object__unaccent__icontains=word)
+        for word in self._folded:
+            q |= Q(Contains(folded("object"), word.upper()))
         return q
 
     @classmethod
     def from_params(cls, params: dict) -> "KeywordRule":
-        return cls(_strings(params, "words"))
+        words = _strings(params, "words")
+        if any(len(w) < MIN_WORD for w in words):
+            raise RuleError(f"each word needs at least {MIN_WORD} characters")  # shorter has no trigram to index
+        return cls(words)
 
 
 @register

@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from contracts.ingest import ContractIngestor
-from contracts.secop import SocrataSource
+from contracts.ingestion import ContractIngestor
+from contracts.sources import SocrataSource
 from events.bus import get_bus
 
 DEFAULT_SLICE = "departamento='Cauca' AND fecha_de_firma >= '2025-01-01'"

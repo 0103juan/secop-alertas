@@ -7,18 +7,18 @@ import logging
 from dataclasses import asdict, dataclass
 
 from django.db import transaction
+from django.db.models import F
 
 from events.bus import Event, EventBus
 from events.outbox import enqueue, relay
 
+from .events import CONTRACTS_CHANGED, EVENT_BATCH
 from .models import Contract, IngestCursor
-from .secop import ContractRow, ContractSource
+from .sources import ContractRow, ContractSource
 
 log = logging.getLogger(__name__)
 
-CONTRACTS_CHANGED = "contracts.changed"
 UPDATE_FIELDS = [f for f in ContractRow.__dataclass_fields__ if f != "id"]
-EVENT_BATCH = 500  # ids per event; a Pub/Sub message is limited to 10 MB, and smaller batches retry cheaper
 
 
 @dataclass
@@ -29,6 +29,8 @@ class IngestReport:
 
 
 class ContractIngestor:
+    """Depends on two ports, a ContractSource and an EventBus, so tests run it with a list and a recorder."""
+
     def __init__(self, source: ContractSource, bus: EventBus):
         self.source = source
         self.bus = bus
@@ -45,7 +47,7 @@ class ContractIngestor:
             relay(self.bus)
             if max_pages and report.pages >= max_pages:
                 break
-        IngestCursor.objects.filter(pk=cursor.pk).update(runs=cursor.runs + 1)
+        IngestCursor.objects.filter(pk=cursor.pk).update(runs=F("runs") + 1)
         log.info("ingested slice=%r pages=%d seen=%d changed=%d", where, report.pages, report.seen, report.changed)
         return report
 

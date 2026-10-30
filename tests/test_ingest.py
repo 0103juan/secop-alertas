@@ -3,9 +3,10 @@ from datetime import UTC, datetime
 import httpx
 import pytest
 
-from contracts.ingest import CONTRACTS_CHANGED, ContractIngestor
+from contracts.events import CONTRACTS_CHANGED
+from contracts.ingestion import ContractIngestor
 from contracts.models import Contract, IngestCursor
-from contracts.secop import SocrataSource, parse_row
+from contracts.sources import SocrataSource, parse_row
 from events.models import OutboxEvent
 
 
@@ -70,7 +71,7 @@ def test_second_run_announces_only_what_changed_and_resumes_from_the_cursor():
 
 
 def test_socrata_source_pages_until_a_short_page_and_retries_server_errors(monkeypatch):
-    monkeypatch.setattr("contracts.secop.time.sleep", lambda s: None)
+    monkeypatch.setattr("contracts.sources.time.sleep", lambda s: None)
     calls = []
 
     def handler(request):

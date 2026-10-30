@@ -1,15 +1,18 @@
 import hashlib
 import hmac
 import json
+from datetime import timedelta
 
 import httpx
 import pytest
 from django.core import mail
+from django.utils import timezone
 
 from alerts import notifiers
-from alerts.matching import MAX_ATTEMPTS, deliver_pending, match_and_deliver
+from alerts.delivery import MAX_ATTEMPTS, backoff, claim, deliver_pending
+from alerts.matching import match
 from alerts.models import Alert, Channel, Subscription
-from contracts.ingest import CONTRACTS_CHANGED
+from contracts.events import CONTRACTS_CHANGED
 from events.bus import Event, dispatch
 
 KEYWORD_VIAS = [{"type": "keyword", "params": {"words": ["vías"]}}]
@@ -117,11 +120,15 @@ def test_webhook_is_signed_and_failures_are_retried_then_given_up(user, contract
     sub = Subscription.objects.create(
         owner=user, name="hook", rules=KEYWORD_VIAS, channel=Channel.WEBHOOK, target="https://hooks.example.org/alertas"
     )
-    match_and_deliver([contract(object="vías").id])
+    match([contract(object="vías").id])
+    assert deliver_pending() == 0
     alert = Alert.objects.get()
     assert alert.delivered_at is None and alert.attempts == 1
+    assert alert.claimed_until > timezone.now() + timedelta(seconds=50)  # first backoff: one minute
 
     status["code"] = 200
+    assert deliver_pending() == 0  # not due yet: the receiver is not hammered
+    Alert.objects.update(claimed_until=timezone.now() - timedelta(seconds=1))
     assert deliver_pending() == 1
     request = received[-1]
     body = request.content.decode()
@@ -137,4 +144,27 @@ def test_webhook_is_signed_and_failures_are_retried_then_given_up(user, contract
 
 def test_inactive_subscriptions_get_nothing(user, contract):
     Subscription.objects.create(owner=user, name="off", rules=KEYWORD_VIAS, target="a@example.com", active=False)
-    assert match_and_deliver([contract(object="vías").id]) == 0
+    assert match([contract(object="vías").id]) == 0
+
+
+def test_a_claimed_alert_is_not_taken_by_a_second_worker_until_its_lease_expires(user, contract):
+    Subscription.objects.create(owner=user, name="vías", rules=KEYWORD_VIAS, target="ana@example.com")
+    match([contract(object="vías").id])
+    assert len(claim(10)) == 1
+    assert claim(10) == []  # a second worker, while the first one is sending
+    Alert.objects.update(claimed_until=timezone.now() - timedelta(seconds=1))  # the first worker died
+    assert len(claim(10)) == 1
+
+
+def test_backoff_doubles():
+    assert [backoff(n).total_seconds() / 60 for n in (1, 2, 3, 4)] == [1, 2, 4, 8]
+
+
+def test_the_admin_cannot_save_rules_the_matcher_cannot_run(user):
+    from django.core.exceptions import ValidationError
+
+    subscription = Subscription(
+        owner=user, name="x", rules=[{"type": "keyword", "params": {"words": ["ab"]}}], target="a@example.com"
+    )
+    with pytest.raises(ValidationError, match="at least 3 characters"):
+        subscription.full_clean()

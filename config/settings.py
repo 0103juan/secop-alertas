@@ -4,7 +4,6 @@ Only DATABASE_URL and, outside DEBUG, SECRET_KEY are required. Everything else h
 """
 
 import os
-import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -18,9 +17,7 @@ def env_bool(name: str, default: bool = False) -> bool:
 
 
 DEBUG = env_bool("DEBUG")
-SECRET_KEY = os.environ.get("SECRET_KEY") or (
-    "dev-only-key-never-use-outside-a-laptop" if DEBUG or "pytest" in sys.modules else None
-)
+SECRET_KEY = os.environ.get("SECRET_KEY") or ("dev-only-key-never-use-outside-a-laptop" if DEBUG else None)
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY is required when DEBUG is off")
 
@@ -39,6 +36,7 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_spectacular",
     "contracts",
+    "accounts",
     "alerts",
     "events",
     "analytics",
