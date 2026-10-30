@@ -10,31 +10,117 @@ import { FieldErrors } from '../../shared/field-errors';
   imports: [FormField, FieldErrors, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="auth card card--raised">
-      <h1>Ingresar</h1>
-      <p class="muted">Para crear y ver tus alertas.</p>
-      <form class="stack" (submit)="send($event)" novalidate>
-        <label class="field">
-          <span>Usuario</span>
-          <input class="input" [formField]="f.username" autocomplete="username" />
-          <app-field-errors [field]="f.username" />
-        </label>
-        <label class="field">
-          <span>Contraseña</span>
-          <input class="input" type="password" [formField]="f.password" autocomplete="current-password" />
-          <app-field-errors [field]="f.password" />
-        </label>
-        @for (error of f().errors(); track $index) {
-          <p class="notice notice--error" role="alert">{{ error.message }}</p>
-        }
-        <button class="button" type="submit" [disabled]="f().submitting()">
-          {{ f().submitting() ? 'Ingresando…' : 'Ingresar' }}
-        </button>
-      </form>
-      <p class="small muted">¿No tienes cuenta? <a routerLink="/registro" [queryParams]="{ next: next() }">Créala</a></p>
+    <div class="auth-wrapper">
+      <div class="auth card card--raised">
+        <div class="auth__brand-mark">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-opacity="0.25"
+            />
+            <circle
+              cx="12"
+              cy="12"
+              r="6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-opacity="0.5"
+            />
+            <circle cx="12" cy="12" r="2.5" fill="var(--accent)" />
+            <path
+              d="M12 2C17.5228 2 22 6.47715 22 12"
+              stroke="var(--accent)"
+              stroke-width="2.5"
+              stroke-linecap="round"
+            />
+          </svg>
+        </div>
+
+        <header class="auth__head">
+          <h1>Ingresar</h1>
+          <p class="muted">Accede para gestionar tus alertas y suscripciones.</p>
+        </header>
+
+        <form class="stack" (submit)="send($event)" novalidate>
+          <label class="field">
+            <span>Usuario</span>
+            <input
+              class="input"
+              [formField]="f.username"
+              autocomplete="username"
+              placeholder="Nombre de usuario"
+            />
+            <app-field-errors [field]="f.username" />
+          </label>
+          <label class="field">
+            <span>Contraseña</span>
+            <input
+              class="input"
+              type="password"
+              [formField]="f.password"
+              autocomplete="current-password"
+              placeholder="Tu contraseña"
+            />
+            <app-field-errors [field]="f.password" />
+          </label>
+          @for (error of f().errors(); track $index) {
+            <p class="notice notice--error" role="alert">{{ error.message }}</p>
+          }
+          <button class="button button--auth" type="submit" [disabled]="f().submitting()">
+            {{ f().submitting() ? 'Ingresando…' : 'Ingresar' }}
+          </button>
+        </form>
+
+        <footer class="auth__foot">
+          <p class="small muted">
+            ¿No tienes cuenta?
+            <a routerLink="/registro" [queryParams]="{ next: next() }">Crear cuenta</a>
+          </p>
+        </footer>
+      </div>
     </div>
   `,
-  styles: `.auth { max-width: 420px; margin: 24px auto; display: grid; gap: 12px; }`,
+  styles: `
+    .auth-wrapper {
+      padding: 32px 0 48px;
+    }
+    .auth {
+      max-width: 440px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+      padding: 32px 28px;
+    }
+    .auth__brand-mark {
+      color: var(--text);
+    }
+    .auth__head h1 {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    .auth__head p {
+      margin: 0;
+      font-size: 14px;
+    }
+    .button--auth {
+      width: 100%;
+      min-height: 42px;
+      font-size: 15px;
+      margin-top: 4px;
+    }
+    .auth__foot {
+      padding-top: 12px;
+      border-top: 1px solid var(--line-subtle);
+      text-align: center;
+    }
+    .auth__foot p {
+      margin: 0;
+    }
+  `,
 })
 export class LoginPage {
   readonly next = input<string>();
@@ -54,7 +140,6 @@ export class LoginPage {
       try {
         await this.session.login(username, password);
       } catch (error) {
-        // A 401 from simplejwt carries {detail}; it belongs to the form, not to one field.
         return serverErrors(error, {});
       }
       await this.router.navigateByUrl(safeNext(this.next()));
