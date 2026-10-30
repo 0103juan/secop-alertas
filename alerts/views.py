@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import CursorPagination
@@ -27,11 +28,14 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     pagination_class = NewestFirst
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # schema generation runs without a user
+            return Subscription.objects.none()
         return Subscription.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    @extend_schema(responses=ContractSerializer(many=True))
     @action(detail=True, methods=["get"])
     def preview(self, request, pk=None):
         """The most recent contracts these rules would have matched, computed in the database."""
@@ -39,6 +43,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         contracts = Contract.objects.filter(rule.as_q()).order_by("-signed_on", "id")[:PREVIEW_SIZE]
         return Response(ContractSerializer(contracts, many=True).data)
 
+    @extend_schema(responses=SubscriptionSecretSerializer)
     @action(detail=True, methods=["get"])
     def secret(self, request, pk=None):
         """The key that signs this subscription's webhooks, shown only to its owner."""
@@ -52,4 +57,6 @@ class AlertViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     filterset_fields = ["subscription"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Alert.objects.none()
         return Alert.objects.filter(subscription__owner=self.request.user).select_related("contract")

@@ -19,3 +19,5 @@ class ContractViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ["signed_on", "value_cop"]
     ordering = ["-signed_on", "id"]
     permission_classes = [AllowAny]
+    # SECOP ids have dots (CO1.PCCNTR.9025726); DRF's default lookup pattern, [^/.]+, would 404 every one of them.
+    lookup_value_regex = "[^/]+"

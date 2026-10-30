@@ -1,3 +1,11 @@
+# The Angular client, built once; Django serves the result from the same origin as the API.
+FROM node:24-slim AS frontend
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/ ./
+RUN npx ng build
+
 FROM python:3.13-slim AS build
 COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /bin/uv
 WORKDIR /app
@@ -5,6 +13,7 @@ ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 COPY . .
+COPY --from=frontend /frontend/dist /app/frontend/dist
 RUN SECRET_KEY=build-only .venv/bin/python manage.py collectstatic --noinput
 
 FROM python:3.13-slim

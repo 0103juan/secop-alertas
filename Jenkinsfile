@@ -51,6 +51,19 @@ pipeline {
             }
         }
 
+        stage('Frontend') {
+            steps {
+                script {
+                    docker.image('node:24-slim').inside("-e HOME=${WORKSPACE} -e npm_config_cache=${WORKSPACE}/.npm") {
+                        dir('frontend') {
+                            sh 'npm ci --no-audit --no-fund'
+                            sh 'npx ng test --watch=false'
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Image') {
             steps {
                 sh 'docker build --pull --label ci.pipeline=secop-alertas -t secop-alertas:${IMAGE_TAG} .'

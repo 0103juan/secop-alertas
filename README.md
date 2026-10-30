@@ -30,6 +30,23 @@ the structure, and the database tuning with query plans measured before and afte
 | PostgreSQL tuned from `EXPLAIN ANALYZE`: expression, trigram, full-text and partial indexes (200 ms to 3.8 ms on the slowest query) | `contracts/models.py`, `alerts/models.py`, [docs](docs/ARCHITECTURE.md#5-data-model-and-database-decisions) |
 | GCP in Terraform: Cloud Run service + job, Pub/Sub with dead letters, Scheduler, Secret Manager, least-privilege accounts | `deploy/gcp/main.tf` |
 
+## The web client
+
+An **Angular 22** client in `frontend/`, built into the same image and served by Django on the same origin:
+contract search with filters in the URL, the two readings with their charts, sign-up, and an alert editor with a rule
+builder. Signals and `httpResource`, signal forms, zoneless change detection, lazy routes with `canMatch` guards,
+types generated from the OpenAPI document, the access token only in memory and the refresh token in an `HttpOnly`
+cookie. 19 unit tests (Vitest) and 17 end-to-end tests (Playwright, against the real stack). Design notes in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#11-the-web-client-angular-22).
+
+```bash
+cd frontend && npm ci
+npm start                 # dev server on :4200, /api proxied to Django on :8000
+npx ng test --watch=false
+npm run e2e               # builds nothing: run `npx ng build` first; starts Django with the demo data itself
+npm run api:types         # after changing a serializer: regenerate the TypeScript types
+```
+
 ## Architecture
 
 ```
@@ -153,7 +170,7 @@ uv run python manage.py runserver
 Tests run against the real Postgres (full-text search, upserts and row locks are what they check):
 
 ```bash
-uv run pytest        # 39 tests
+uv run pytest        # 48 tests
 uv run ruff check . && uv run ruff format --check .
 ```
 
