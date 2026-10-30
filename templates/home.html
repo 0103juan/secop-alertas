@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SECOP alertas</title>
+  <style>
+    :root { --bg: #fff; --fg: #1d1d1f; --muted: #6e6e73; --surface: #f5f5f7; --accent: #0066cc; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #000; --fg: #f5f5f7; --muted: #a1a1a6; --surface: #1c1c1e; --accent: #2997ff; } }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 48px 16px; }
+    h1 { font-size: 40px; letter-spacing: -0.02em; margin: 0 0 8px; }
+    p { color: var(--muted); margin: 0 0 24px; }
+    a { color: var(--accent); text-decoration: none; }
+    ul { list-style: none; padding: 0; display: grid; gap: 12px; }
+    li { background: var(--surface); border-radius: 14px; padding: 16px; }
+    code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+    small { color: var(--muted); display: block; margin-top: 4px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>SECOP alertas</h1>
+  <p>Alertas y lecturas sobre la contratación pública de Colombia (SECOP II, datos abiertos). Django + Django REST
+    Framework, PostgreSQL, Redis y Pub/Sub sobre Cloud Run. Las lecturas describen patrones en los datos; no juzgan
+    a ninguna entidad.</p>
+  <ul>
+    <li><a href="/api/docs/">Documentación interactiva (OpenAPI)</a><small>Registro, token JWT, suscripciones y alertas.</small></li>
+    <li><a href="/api/v1/contracts/?department=Cauca&amp;q=v%C3%ADas">/api/v1/contracts/?q=vías</a><small>Búsqueda de texto completo en español, paginación por cursor.</small></li>
+    <li><a href="/api/v1/analytics/splitting/?department=Cauca&amp;threshold_cop=50000000&amp;window_days=30">/api/v1/analytics/splitting/</a><small>Posible fraccionamiento: ventanas de contratos de una entidad con un mismo proveedor que juntos superan un umbral. O(n log n).</small></li>
+    <li><a href="/api/v1/analytics/outliers/?department=Cauca">/api/v1/analytics/outliers/</a><small>Valores atípicos por modalidad y tipo (z robusto con mediana y MAD, SciPy).</small></li>
+    <li><a href="https://github.com/0103juan/secop-alertas">Código en GitHub</a><small>Arquitectura, decisiones y pruebas en el README.</small></li>
+  </ul>
+</main>
+</body>
+</html>

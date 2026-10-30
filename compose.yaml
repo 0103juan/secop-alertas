@@ -1,0 +1,18 @@
+# Local stack: Postgres and Redis for development and tests. The app runs from the host (uv run).
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: alertas
+    ports: ["5434:5432"] # 5432 and 5433 are taken on the author's machine
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 3s
+      retries: 20
+  redis:
+    image: redis:8-alpine
+    ports: ["6380:6379"]
+volumes:
+  pgdata:

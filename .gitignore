@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+staticfiles/
+.env
+deploy/gcp/.terraform/
+deploy/gcp/*.tfstate*
+deploy/gcp/terraform.tfvars
+deploy/gcp/*.plan
