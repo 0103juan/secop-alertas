@@ -63,7 +63,7 @@ def fake_verifier(monkeypatch, claims=None, error=None):
         assert audience == "https://alertas.example.run.app/internal/events/pubsub"
         return claims
 
-    monkeypatch.setattr("events.views.id_token.verify_oauth2_token", verify)
+    monkeypatch.setattr("events.push.id_token.verify_oauth2_token", verify)
 
 
 def test_push_without_token_is_rejected(client, push_settings, received):

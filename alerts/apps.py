@@ -5,4 +5,4 @@ class AlertsConfig(AppConfig):
     name = "alerts"
 
     def ready(self) -> None:
-        from . import matching  # noqa: F401  registers the event handlers
+        from . import handlers  # noqa: F401  registers the event handlers

@@ -9,22 +9,25 @@ publishes or updates is matched against them; matches go out by email or by a si
 over the loaded data: possible contract splitting (an O(n log n) sliding window) and value outliers (robust
 statistics with SciPy). The readings describe patterns in public data; they do not judge any entity.
 
+**[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** explains how the design was reached, the alternatives turned down,
+the structure, and the database tuning with query plans measured before and after.
+
 ## What it shows
 
 | Area | Where |
 |---|---|
-| Django + DRF: viewsets, routers, `django-filter`, cursor pagination, JWT, per-scope throttling, OpenAPI | `contracts/api.py`, `alerts/api.py`, `config/` |
-| Strategy, Composite and Factory: alert rules built from JSON | `alerts/rules.py` |
+| Django + DRF: viewsets, routers, `django-filter`, cursor pagination, JWT, per-scope throttling, OpenAPI | `*/views.py`, `*/serializers.py`, `contracts/filters.py`, `config/` |
+| Strategy, Composite, Template Method and Factory: alert rules built from JSON | `alerts/rules.py` |
 | Factory: one notifier per channel (email, signed webhook) | `alerts/notifiers.py` |
-| Observer: domain events with an in-process or Pub/Sub transport | `events/bus.py` |
+| Observer: domain events with an in-process or Pub/Sub transport | `events/bus.py`, `alerts/handlers.py` |
 | Singleton: one Pub/Sub client per process | `events/bus.py` (`get_bus`) |
-| Ports and adapters: the ingestion depends on a `ContractSource` protocol, not on HTTP | `contracts/secop.py` |
+| Ports and adapters: ingestion depends on a `ContractSource` protocol, not on HTTP | `contracts/sources.py`, `contracts/ingestion.py` |
 | Transactional outbox: no event lost or invented between the database and Pub/Sub | `events/models.py`, `events/outbox.py` |
-| Idempotency and at-least-once delivery: unique pairs, upserts, `SKIP LOCKED` | `alerts/matching.py`, `contracts/ingest.py` |
+| Idempotency, leases and backoff for at-least-once delivery | `alerts/matching.py`, `alerts/delivery.py` |
 | Algorithms: sliding window with prefix sums and binary search, checked against a brute-force reference | `analytics/splitting.py` |
 | Robust statistics with pandas, NumPy and SciPy | `analytics/outliers.py` |
-| Security: OIDC-verified Pub/Sub push, HMAC-signed webhooks, SSRF guard, owner-scoped querysets | `events/views.py`, `alerts/notifiers.py`, `alerts/api.py` |
-| PostgreSQL: GIN full-text index in Spanish, composite and partial indexes, `unaccent` | `contracts/models.py`, `events/models.py` |
+| Security: OIDC-verified Pub/Sub push, HMAC-signed webhooks, SSRF guard, owner-scoped querysets | `events/push.py`, `alerts/notifiers.py`, `alerts/views.py` |
+| PostgreSQL tuned from `EXPLAIN ANALYZE`: expression, trigram, full-text and partial indexes (200 ms to 3.8 ms on the slowest query) | `contracts/models.py`, `alerts/models.py`, [docs](docs/ARCHITECTURE.md#5-data-model-and-database-decisions) |
 | GCP in Terraform: Cloud Run service + job, Pub/Sub with dead letters, Scheduler, Secret Manager, least-privilege accounts | `deploy/gcp/main.tf` |
 
 ## Architecture
@@ -150,7 +153,7 @@ uv run python manage.py runserver
 Tests run against the real Postgres (full-text search, upserts and row locks are what they check):
 
 ```bash
-uv run pytest        # 35 tests
+uv run pytest        # 39 tests
 uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -176,6 +179,8 @@ gcloud run jobs execute alertas-ingest --region us-central1 --wait    # first lo
   webhooks are sent. A real deployment sets `EMAIL_BACKEND` to an SMTP or API provider.
 - Redis runs beside each Cloud Run instance, so the cache and throttling counters are per instance and start
   empty. Memorystore would share them for about 36 USD a month.
+- A failed delivery becomes due after its backoff (1 to 8 minutes) but is only retried when something runs
+  `deliver_pending`: the next push or the daily job. A Cloud Scheduler job every few minutes would close that gap.
 - Matching is n contracts × m subscriptions in memory. With thousands of subscriptions the next step is an
   inverted index from keyword and NIT to subscriptions.
 - The splitting reading groups by the supplier's document number, which SECOP publishes; the API never returns
