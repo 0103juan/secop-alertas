@@ -26,6 +26,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/analytics/outliers.page').then((m) => m.OutliersPage),
   },
   {
+    path: 'analista',
+    title: 'Analista Inteligente · SECOP alertas',
+    loadComponent: () => import('./features/analyst/analyst.page').then((m) => m.AnalystPage),
+  },
+  {
     path: 'ingresar',
     title: 'Ingresar · SECOP alertas',
     loadComponent: () => import('./features/auth/login.page').then((m) => m.LoginPage),

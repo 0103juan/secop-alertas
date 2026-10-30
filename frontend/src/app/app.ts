@@ -56,6 +56,12 @@ import { ThemeService } from './core/theme.service';
           </li>
           <li><a routerLink="/lecturas/atipicos" routerLinkActive="active">Atípicos</a></li>
           <li><a routerLink="/alertas" routerLinkActive="active">Mis alertas</a></li>
+          <li>
+            <a routerLink="/analista" routerLinkActive="active" class="link--ai">
+              <span>Analista AI</span>
+              <span class="nav-chip">AGENTE</span>
+            </a>
+          </li>
         </ul>
 
         <div class="actions">
@@ -249,6 +255,36 @@ import { ThemeService } from './core/theme.service';
       background: var(--surface-2);
       border: 1px solid var(--line);
       font-weight: 600;
+    }
+    .links a.link--ai {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+    }
+    .links a.link--ai:hover {
+      background: var(--accent-border);
+      color: var(--accent-hover);
+    }
+    .links a.link--ai.active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+    .links a.link--ai.active .nav-chip {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+    .nav-chip {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #ffffff;
     }
 
     .actions {
