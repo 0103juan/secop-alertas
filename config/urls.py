@@ -1,6 +1,4 @@
 from django.contrib import admin
-from django.db import connection
-from django.http import JsonResponse
 from django.urls import include, path
 from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -18,12 +16,6 @@ router.register("subscriptions", SubscriptionViewSet, basename="subscription")
 router.register("alerts", AlertViewSet, basename="alert")
 
 
-def health(request):
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT 1")
-    return JsonResponse({"status": "ok"})
-
-
 api_v1 = [
     path("", include(router.urls)),
     path("auth/register/", RegisterView.as_view(), name="register"),
@@ -39,6 +31,5 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
     path("internal/events/pubsub", pubsub_push, name="pubsub-push"),
-    path("healthz", health),
     path("admin/", admin.site.urls),
 ]
