@@ -32,7 +32,8 @@ def demo_rows() -> list[Contract]:
 
     # A group with ordinary values, around $ 10 million, and one far above it.
     for n in range(40):
-        add(n, object=f"Suministro de papelería y elementos de oficina, lote {n}", value_cop=int(10 ** rng.gauss(7, 0.15)))
+        value = int(10 ** rng.gauss(7, 0.15))
+        add(n, object=f"Suministro de papelería y elementos de oficina, lote {n}", value_cop=value)
     add(40, object="Suministro de equipos de cómputo para todas las sedes", value_cop=5_000_000_000)
 
     # Bridges, for search and for alert rules.
@@ -43,8 +44,15 @@ def demo_rows() -> list[Contract]:
 
     # Three contracts under $ 50 million each, same entity and supplier, ten days apart: one splitting cluster.
     for n, day in enumerate([0, 4, 9], start=60):
-        add(n, object="Mantenimiento de vías terciarias", value_cop=20_000_000, contract_type="Obra",
-            supplier="Constructora Demo SAS", supplier_doc="900123456", signed_on=START + timedelta(days=day))  # fmt: skip
+        add(
+            n,
+            object="Mantenimiento de vías terciarias",
+            value_cop=20_000_000,
+            contract_type="Obra",
+            supplier="Constructora Demo SAS",
+            supplier_doc="900123456",
+            signed_on=START + timedelta(days=day),
+        )
     return rows
 
 
