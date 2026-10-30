@@ -53,7 +53,7 @@ pipeline {
 
         stage('Image') {
             steps {
-                sh 'docker build --pull -t secop-alertas:${IMAGE_TAG} .'
+                sh 'docker build --pull --label ci.pipeline=secop-alertas -t secop-alertas:${IMAGE_TAG} .'
             }
         }
 
@@ -95,7 +95,8 @@ pipeline {
 
     post {
         always {
-            sh 'docker image prune -f --filter "until=72h" || true'
+            // Only this pipeline's own images, older than three days: the agent's Docker may be shared.
+            sh 'docker image prune -af --filter "label=ci.pipeline=secop-alertas" --filter "until=72h" || true'
         }
     }
 }
