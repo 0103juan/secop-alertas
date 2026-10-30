@@ -52,14 +52,6 @@ import { describe } from './rules';
       <div class="head">
         <div class="head__main">
           <div class="head__status-row">
-            <span class="chip" [class.chip--ok]="s.active" [class.chip--muted]="!s.active">
-              <span
-                class="status-dot"
-                [class.status-dot--active]="s.active"
-                aria-hidden="true"
-              ></span>
-              <span>{{ s.active ? 'Activa' : 'Pausada' }}</span>
-            </span>
             <span class="chip chip--channel">
               {{ s.channel === 'webhook' ? 'Webhook firmado' : 'Notificación por Correo' }}
             </span>
@@ -76,7 +68,14 @@ import { describe } from './rules';
           <p class="small muted target-info">
             {{ s.channel === 'webhook' ? 'Webhook' : 'Correo' }} a
             <span class="mono target-box">{{ s.target }}</span> ·
-            <span class="status-text">{{ s.active ? 'Activa' : 'Pausada' }}</span>
+            <span class="chip" [class.chip--ok]="s.active" [class.chip--muted]="!s.active">
+              <span
+                class="status-dot"
+                [class.status-dot--active]="s.active"
+                aria-hidden="true"
+              ></span>
+              {{ s.active ? 'Activa' : 'Pausada' }}
+            </span>
           </p>
         </div>
 
