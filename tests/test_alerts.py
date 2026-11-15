@@ -168,3 +168,12 @@ def test_the_admin_cannot_save_rules_the_matcher_cannot_run(user):
     )
     with pytest.raises(ValidationError, match="at least 3 characters"):
         subscription.full_clean()
+
+
+def test_alerts_can_be_filtered_by_delivery(auth_api, user, contract):
+    sub = Subscription.objects.create(owner=user, name="vías", rules=KEYWORD_VIAS, target="ana@example.com")
+    c = contract(object="Vías terciarias")
+    Alert.objects.create(subscription=sub, contract=c, delivered_at=timezone.now())
+    Alert.objects.create(subscription=sub, contract=contract(object="Vías urbanas"))
+    count = lambda q: len(auth_api.get(f"/api/alerts/{q}").json()["results"])  # noqa: E731
+    assert (count(""), count("?delivered=true"), count("?delivered=false")) == (2, 1, 1)

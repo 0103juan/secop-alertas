@@ -1,3 +1,4 @@
+import django_filters
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
@@ -50,11 +51,19 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         return Response(SubscriptionSecretSerializer(self.get_object()).data)
 
 
+class AlertFilter(django_filters.FilterSet):
+    delivered = django_filters.BooleanFilter(field_name="delivered_at", lookup_expr="isnull", exclude=True)
+
+    class Meta:
+        model = Alert
+        fields = ["subscription", "delivered"]
+
+
 class AlertViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = AlertSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = NewestFirst
-    filterset_fields = ["subscription"]
+    filterset_class = AlertFilter
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
